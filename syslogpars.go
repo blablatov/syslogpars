@@ -1,4 +1,6 @@
-// syslog UDP-сервер
+// syslog UDP-сервер.
+// Base of idea to https://github.com/alash3al/go-beeper/tree/v1.0.0.
+// Thanks him!
 package main
 
 import (
@@ -13,6 +15,7 @@ import (
 )
 
 func main() {
+	// Starting cycle listen the udp-server. Работа udp-сервера в цикле.
 	servport := ":51444"
 	serUDPAddr, err := net.ResolveUDPAddr("udp", servport)
 	if err != nil {
@@ -26,6 +29,8 @@ func main() {
 		handleConn(sUDPConn)
 	}
 }
+
+// Handler of connect. Обработчик подключения.
 func handleConn(cn *net.UDPConn) {
 	defer cn.Close()
 	for {
@@ -34,11 +39,14 @@ func handleConn(cn *net.UDPConn) {
 		if err != nil {
 			continue
 		}
+		// System time. Время сервера.
 		cntime := time.Now().String() //"15:04:05\n"
-		//cntime := time.Now().Format("01/02 03:04:05PM '06 -0700")
+		// Data the host syslog. Syslog данные с хоста.
 		fmt.Println("APC client: ", string(cnbuf[0:dn]))
 		alarm := string(cnbuf[0:dn])
-		if strings.Contains(alarm, "Alarm") {
+		// If data contains need the string, call method beeper via goroutine.
+		// Если данные содержат реперную строку, вызываем метод beeper через goroutine
+		if strings.Contains(alarm, "High temperature") {
 			var wg sync.WaitGroup // Synchronization of goroutines. Синхронизация горутин.
 			wg.Add(1)             // Counter of goroutines. Значение счетчика горутин
 			go mainbeep.MainBeep(wg)
@@ -47,11 +55,9 @@ func handleConn(cn *net.UDPConn) {
 				wg.Wait()
 			}()
 		}
-		//fmt.Println("time of server: ", cntime)
 		cn.WriteToUDP([]byte(cntime), addr)
 		if err != nil {
 			return // For example, disabling the client. Например, отключение клиента.
 		}
-		//time.Sleep(1 * time.Second)
 	}
 }

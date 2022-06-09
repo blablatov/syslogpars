@@ -1,10 +1,26 @@
-// syslog UDP-сервер
+// Test syslog UDP-сервер
 package main
 
 import (
-	//"os"
+	"fmt"
+	"mainbeep"
+	"net"
+	"sync"
 	"testing"
 )
+
+var strTests = []struct {
+	servport string
+	//SelectReqSql string
+}{
+	{" "},
+	{"0001234"},
+	{"_+/__65534"},
+	{"NaN\null\n\n"},
+	{":51444 _"},
+	{"\n\123"},
+	{"Number 9,78.000"},
+}
 
 var udpServerTests = []struct {
 	snet, saddr string // server endpoint
@@ -51,69 +67,43 @@ var udpServerTests = []struct {
 	{snet: "udp", saddr: "[::1]:0", tnet: "udp", taddr: "::1", dial: true},
 }
 
-func TestUDPServer(t *testing.T) {
-	for i, tt := range udpServerTests {
-		if !main() {
+func TestSyslog(t *testing.T) {
+
+	var prevservport string
+	for _, stest := range strTests {
+		if stest.servport != prevservport {
+			fmt.Printf("\n%s\n", stest.servport)
+			prevservport = stest.servport
+		}
+
+		for _, tt := range udpServerTests {
 			t.Logf("skipping %s test", tt.snet+" "+tt.saddr+"<-"+tt.taddr)
 			continue
-		}
 
-		c1, err := main()
-		if err != nil {
-			if perr := err(err); perr != nil {
-				t.Error(perr)
-			}
-			t.Fatal(err)
-		}
-
-		ls, err := (&packetListener{PacketConn: c1}).newLocalServer()
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer ls.teardown()
-		tpch := make(chan error, 1)
-		handler := func(ls *sUDPConn, c UDPConn) { packetTransponder(c, tpch) }
-		if err := ls.buildup(handler); err != nil {
-			t.Fatal(err)
-		}
-
-		trch := make(chan error, 1)
-		_, port, err := SplitHostPort(ls.PacketConn.LocalAddr().String())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if tt.dial {
-			d := Dialer{Timeout: someTimeout}
-			c2, err := d.Dial(tt.tnet, JoinHostPort(tt.taddr, port))
+			serUDPAddr, err := net.ResolveUDPAddr(tt.snet, stest.servport)
 			if err != nil {
-				if perr := parseDialError(err); perr != nil {
-					t.Error(perr)
+				t.Fatal(err)
+			}
+
+			for {
+				sUDPConn, err := net.ListenUDP(tt.snet, serUDPAddr)
+				if err != nil {
+					t.Fatal(err)
 				}
-				t.Fatal(err)
+				handleConn(sUDPConn)
 			}
-			defer c2.Close()
-			go transceiver(c2, []byte("UDP SERVER TEST"), trch)
-		} else {
-			c2, err := ListenPacket(tt.tnet, JoinHostPort(tt.taddr, "0"))
-			if err != nil {
-				if perr := parseDialError(err); perr != nil {
-					t.Error(perr)
-				}
-				t.Fatal(err)
-			}
-			defer c2.Close()
-			dst, err := ResolveUDPAddr(tt.tnet, JoinHostPort(tt.taddr, port))
-			if err != nil {
-				t.Fatal(err)
-			}
-			go packetTransceiver(c2, []byte("UDP SERVER TEST"), dst, trch)
 		}
+	}
+}
 
-		for err := range trch {
-			t.Errorf("#%d: %v", i, err)
-		}
-		for err := range tpch {
-			t.Errorf("#%d: %v", i, err)
-		}
+func BenchmarkGoroutine(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < 10; i++ {
+		var wg sync.WaitGroup // Synchronization of goroutines. Синхронизация горутин.
+		wg.Add(1)             // Counter of goroutines. Значение счетчика горутин
+		go mainbeep.MainBeep(wg)
+		go func() {
+			wg.Wait() // Waiting of counter. Ожидание счетчика.
+		}()
 	}
 }
