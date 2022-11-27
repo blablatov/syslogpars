@@ -1,5 +1,5 @@
 // syslog UDP-сервер.
-// Base of idea to https://github.com/alash3al/go-beeper/tree/v1.0.0.
+// Base of idea to https://github.com/alash3al/go-beeper.git
 // Thanks him!
 package main
 
