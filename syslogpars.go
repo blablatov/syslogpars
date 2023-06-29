@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blablatov/syslogpars/beeper/mainbeep"
+	"github.com/blablatov/syslogpars/beeper"
 )
 
 func main() {
@@ -78,15 +78,7 @@ func handleConn(cn *net.UDPConn) {
 		default:
 			Println("APC client any: ", alarm)
 		}
-		/*if strings.Contains(alarm, "High temperature") {
-			//var wg sync.WaitGroup // Synchronization of goroutines. Синхронизация горутин.
-			wg.Add(1) // Counter of goroutines. Значение счетчика горутин
-			go mainbeep.MainBeep(wg)
-			// Wait of counter. Ожидание счетчика
-			go func() {
-				wg.Wait()
-			}()
-		}*/
+
 		cn.WriteToUDP([]byte(cntime), addr)
 		if err != nil {
 			return // For example, disabling the client. Например, при отключении клиента.

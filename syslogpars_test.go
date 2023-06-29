@@ -7,7 +7,7 @@ import (
 	"net"
 	"sync"
 	"testing"
-	"github.com/blablatov/syslogpars/beeper/mainbeep"
+	"github.com/blablatov/syslogpars/beeper"
 )
 
 var strTests = []struct {
