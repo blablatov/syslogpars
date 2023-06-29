@@ -1,8 +1,9 @@
 package mainbeep
 
 import (
-	"beeper"
 	"sync"
+
+	"github.com/blablatov/syslogpars/beeper"
 )
 
 func MainBeep() {
