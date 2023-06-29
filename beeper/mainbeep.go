@@ -5,14 +5,14 @@ import (
 	"sync"
 )
 
-func MainBeep(wg sync.WaitGroup) {
-	defer wg.Done()
-	// beep once
+func MainBeep() {
+	// beep once. Подать звуковой сигнал один раз
 	//beeper.Beep()
 
-	// beep three times
+	// beep three times. Звуковой сигнал три раза
 	//beeper.Beep(3)
 
+	// beep, beep, pause, pause, beep, pause, pause, etc
+	// Мелодия в цикле (*бипер, -пауза)
 	beeper.Melody("**--**--**--**")
-	// beep, beep, pause, pause, beep, beep
 }

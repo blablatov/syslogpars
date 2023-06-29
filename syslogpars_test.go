@@ -1,4 +1,4 @@
-// Test syslog UDP-сервер
+// Test of syslog UDP server
 package main
 
 import (
@@ -7,25 +7,26 @@ import (
 	"net"
 	"sync"
 	"testing"
+	"github.com/blablatov/syslogpars/beeper/mainbeep"
 )
 
 var strTests = []struct {
-	servport string
-	//SelectReqSql string
+	chport  string
+	sport string
 }{
-	{" "},
-	{"0001234"},
-	{"_+/__65534"},
-	{"NaN\null\n\n"},
-	{":51444 _"},
-	{"\n\123"},
-	{"Number 9,78.000"},
+	{"'`", ",,`"},
+	{"0001234", "45600000"},
+	{"_+/__65534", "1"},
+	{"NaN\null\n\n", "NaN\t\t\t123"},
+	{":51444 _", ":514"},
+	{"\n\123", "65534"},
+	{"Number 9,78.000", "NumNum<>Num"},
 }
 
 var udpServerTests = []struct {
-	snet, saddr string // server endpoint
-	tnet, taddr string // target endpoint for client
-	dial        bool   // test with Dial
+	snet, saddr string // server endpoint. Конечная точка сервера
+	tnet, taddr string // target endpoint for client. Целевая конечная точка для клиента
+	dial        bool   // test with Dial. Тест с Dial
 }{
 	{snet: "udp", saddr: ":0", tnet: "udp", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "0.0.0.0:0", tnet: "udp", taddr: "127.0.0.1"},
@@ -69,11 +70,18 @@ var udpServerTests = []struct {
 
 func TestSyslog(t *testing.T) {
 
-	var prevservport string
-	for _, stest := range strTests {
-		if stest.servport != prevservport {
-			fmt.Printf("\n%s\n", stest.servport)
-			prevservport = stest.servport
+	var prevchport string
+	for _, chtest := range strTests {
+		if chtest.chport != prevchport {
+			fmt.Printf("\n%s\n", chtest.chport)
+			prevchport = chtest.chport
+		}
+		
+		var prevsport string
+	for _, ptest := range strTests {
+		if ptest.sport != prevsport {
+			fmt.Printf("\n%s\n", ptest.sport)
+			prevsport = ptest.sport
 		}
 
 		for _, tt := range udpServerTests {
@@ -99,11 +107,6 @@ func TestSyslog(t *testing.T) {
 func BenchmarkGoroutine(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < 10; i++ {
-		var wg sync.WaitGroup // Synchronization of goroutines. Синхронизация горутин.
-		wg.Add(1)             // Counter of goroutines. Значение счетчика горутин
-		go mainbeep.MainBeep(wg)
-		go func() {
-			wg.Wait() // Waiting of counter. Ожидание счетчика.
-		}()
+		go mainbeep.MainBeep()
 	}
 }
