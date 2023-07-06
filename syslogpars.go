@@ -28,7 +28,6 @@ func main() {
 
 	// Starting cycle listen the udp-server.
 	// Старт udp-сервера в цикле прослушивания.
-	//servport := ":51444"
 	saddr, err := net.ResolveUDPAddr("udp", <-chport)
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +56,7 @@ func handleConn(cn *net.UDPConn) {
 		cntime := time.Now().String()
 
 		// Data the syslog client. Syslog данные клиента.
-		fmt.Println("APC client: ", string(cnbuf[0:dn]))
+		fmt.Println("APC client:", addr.String(), string(cnbuf[0:dn]))
 
 		// Checks and parse EOF. Проверка и парсинг строки с EOF.
 		var atEOF bool
@@ -72,16 +71,16 @@ func handleConn(cn *net.UDPConn) {
 		switch alarm {
 		case "High temperature":
 			go mainBeep()
-			log.Println("APC client High temp: ", alarm)
+			log.Println("APC client:", addr.String(), alarm)
 		case "Maximum temperature":
 			go mainBeep()
-			log.Println("APC client Max temp: ", alarm)
+			log.Println("APC client:", addr.String(), alarm)
 		case "System":
-			log.Println("APC client System: ", alarm)
+			log.Println("APC client:", addr.String(), alarm)
 		case "Configuration":
-			log.Println("APC client Configuration: ", alarm)
+			log.Println("APC client:", addr.String(), alarm)
 		default:
-			log.Println("APC client any default: ", alarm)
+			log.Println("APC client any:", addr.String(), alarm)
 		}
 
 		cn.WriteToUDP([]byte(cntime), addr)
