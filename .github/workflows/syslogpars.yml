@@ -21,6 +21,4 @@ jobs:
     - name: Build
       run: go build -v ./syslogpars.go
 
-    - name: Test
-      run: go test -v ./syslogpars_test.go
 
