@@ -5,11 +5,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
-	"strings"
-	"sync"
+	"os"
 	"time"
 
 	"github.com/blablatov/syslogpars/beeper"
@@ -56,27 +56,32 @@ func handleConn(cn *net.UDPConn) {
 		// System time. Время сервера.
 		cntime := time.Now().String()
 
-		// Data the syslog client. Syslog данные с клиента.
+		// Data the syslog client. Syslog данные клиента.
 		fmt.Println("APC client: ", string(cnbuf[0:dn]))
 
-		alarm := string(cnbuf[0:dn])
+		// Checks and parse EOF. Проверка и парсинг строки с EOF.
+		var atEOF bool
+		var alarm string
+		_, token, err := bufio.ScanLines(cnbuf[0:dn], atEOF)
+		if err == nil && token != nil {
+			alarm = string(token)
+		}
 
-		// If data of client contains the string with some message, calls func beep in goroutine
-		// Если данные клиента содержат строку с каким-либо сообщением, вызывается метод beep в goroutine
+		// If data of client contains the string with set message, calls func beep in goroutine
+		// Если данные клиента содержат строку с заданным сообщением, вызывается метод beep в goroutine
 		switch alarm {
 		case "High temperature":
-			go mainbeep.MainBeep()
-			log.Println("APC client: ", alarm)
+			go mainBeep()
+			log.Println("APC client High temp: ", alarm)
 		case "Maximum temperature":
-			go mainbeep.MainBeep()
-			log.Println("APC client: ", alarm)
-		case "System:":
-			fmt.Println("APC client: %v", alarm)
-			log.Println("APC client: ", alarm)
+			go mainBeep()
+			log.Println("APC client Max temp: ", alarm)
+		case "System":
+			log.Println("APC client System: ", alarm)
 		case "Configuration":
-			fmt.Println("APC client: %v", alarm)
+			log.Println("APC client Configuration: ", alarm)
 		default:
-			Println("APC client any: ", alarm)
+			log.Println("APC client any default: ", alarm)
 		}
 
 		cn.WriteToUDP([]byte(cntime), addr)
@@ -100,4 +105,16 @@ func readIp() string {
 		sport = input.Text()
 	}
 	return sport
+}
+
+func mainBeep() {
+	// beep once. Подать звуковой сигнал один раз
+	//beeper.Beep()
+
+	// beep three times. Звуковой сигнал три раза
+	//beeper.Beep(3)
+
+	// beep, beep, pause, pause, beep, pause, pause, etc
+	// Мелодия в цикле (*бипер, -пауза)
+	beeper.Melody("**--**--**--**")
 }

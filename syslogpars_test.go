@@ -2,24 +2,27 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"mainbeep"
+	"log"
 	"net"
-	"sync"
+	"os"
+	"strings"
 	"testing"
+
 	"github.com/blablatov/syslogpars/beeper"
 )
 
 var strTests = []struct {
-	chport  string
-	sport string
+	chport string
+	sport  string
 }{
 	{"'`", ",,`"},
 	{"0001234", "45600000"},
 	{"_+/__65534", "1"},
-	{"NaN\null\n\n", "NaN\t\t\t123"},
+	{"NaN\null;%;№$", "-=90++123"},
 	{":51444 _", ":514"},
-	{"\n\123", "65534"},
+	{"000_///123", "655349986"},
 	{"Number 9,78.000", "NumNum<>Num"},
 }
 
@@ -32,81 +35,116 @@ var udpServerTests = []struct {
 	{snet: "udp", saddr: "0.0.0.0:0", tnet: "udp", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::ffff:0.0.0.0]:0", tnet: "udp", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::]:0", tnet: "udp", taddr: "::1"},
-
-	{snet: "udp", saddr: ":0", tnet: "udp", taddr: "::1"},
-	{snet: "udp", saddr: "0.0.0.0:0", tnet: "udp", taddr: "::1"},
+	{snet: "udp", saddr: ":514", tnet: "udp", taddr: "::1"},
+	{snet: "udp", saddr: "192.168.1.1:51444", tnet: "udp", taddr: "::1"},
 	{snet: "udp", saddr: "[::ffff:0.0.0.0]:0", tnet: "udp", taddr: "::1"},
 	{snet: "udp", saddr: "[::]:0", tnet: "udp", taddr: "127.0.0.1"},
-
 	{snet: "udp", saddr: ":0", tnet: "udp4", taddr: "127.0.0.1"},
-	{snet: "udp", saddr: "0.0.0.0:0", tnet: "udp4", taddr: "127.0.0.1"},
+	{snet: "udp", saddr: "10.0.0.2:51444", tnet: "udp4", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::ffff:0.0.0.0]:0", tnet: "udp4", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::]:0", tnet: "udp6", taddr: "::1"},
-
 	{snet: "udp", saddr: ":0", tnet: "udp6", taddr: "::1"},
 	{snet: "udp", saddr: "0.0.0.0:0", tnet: "udp6", taddr: "::1"},
 	{snet: "udp", saddr: "[::ffff:0.0.0.0]:0", tnet: "udp6", taddr: "::1"},
 	{snet: "udp", saddr: "[::]:0", tnet: "udp4", taddr: "127.0.0.1"},
-
-	{snet: "udp", saddr: "127.0.0.1:0", tnet: "udp", taddr: "127.0.0.1"},
+	{snet: "udp", saddr: "127.0.0.1:514", tnet: "udp", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::ffff:127.0.0.1]:0", tnet: "udp", taddr: "127.0.0.1"},
 	{snet: "udp", saddr: "[::1]:0", tnet: "udp", taddr: "::1"},
-
 	{snet: "udp4", saddr: ":0", tnet: "udp4", taddr: "127.0.0.1"},
 	{snet: "udp4", saddr: "0.0.0.0:0", tnet: "udp4", taddr: "127.0.0.1"},
 	{snet: "udp4", saddr: "[::ffff:0.0.0.0]:0", tnet: "udp4", taddr: "127.0.0.1"},
-
 	{snet: "udp4", saddr: "127.0.0.1:0", tnet: "udp4", taddr: "127.0.0.1"},
-
 	{snet: "udp6", saddr: ":0", tnet: "udp6", taddr: "::1"},
 	{snet: "udp6", saddr: "[::]:0", tnet: "udp6", taddr: "::1"},
-
 	{snet: "udp6", saddr: "[::1]:0", tnet: "udp6", taddr: "::1"},
-
 	{snet: "udp", saddr: "127.0.0.1:0", tnet: "udp", taddr: "127.0.0.1", dial: true},
-
 	{snet: "udp", saddr: "[::1]:0", tnet: "udp", taddr: "::1", dial: true},
 }
 
 func TestSyslog(t *testing.T) {
-
 	var prevchport string
 	for _, chtest := range strTests {
 		if chtest.chport != prevchport {
 			fmt.Printf("\n%s\n", chtest.chport)
 			prevchport = chtest.chport
 		}
-		
+
 		var prevsport string
-	for _, ptest := range strTests {
-		if ptest.sport != prevsport {
-			fmt.Printf("\n%s\n", ptest.sport)
-			prevsport = ptest.sport
-		}
-
-		for _, tt := range udpServerTests {
-			t.Logf("skipping %s test", tt.snet+" "+tt.saddr+"<-"+tt.taddr)
-			continue
-
-			serUDPAddr, err := net.ResolveUDPAddr(tt.snet, stest.servport)
-			if err != nil {
-				t.Fatal(err)
+		for _, ptest := range strTests {
+			if ptest.sport != prevsport {
+				fmt.Printf("\n%s\n", ptest.sport)
+				prevsport = ptest.sport
 			}
 
-			for {
-				sUDPConn, err := net.ListenUDP(tt.snet, serUDPAddr)
+			for _, tt := range udpServerTests {
+				t.Logf("skipping %s test", tt.snet+" "+tt.saddr+"<-"+tt.taddr)
+				continue
+
+				serUDPAddr, err := net.ResolveUDPAddr(tt.snet, ptest.chport)
 				if err != nil {
 					t.Fatal(err)
 				}
-				handleConn(sUDPConn)
+
+				for {
+					sUDPConn, err := net.ListenUDP(tt.snet, serUDPAddr)
+					if err != nil {
+						t.Fatal(err)
+					}
+					handleConn(sUDPConn)
+				}
 			}
 		}
 	}
 }
 
-func BenchmarkGoroutine(b *testing.B) {
+func TestReadPort(t *testing.T) {
+	var sport string
+	sp, err := os.Open("port.conf")
+	if err != nil {
+		log.Fatalf("Error open config: %v", err)
+	}
+	defer sp.Close()
+	input := bufio.NewScanner(sp)
+	for input.Scan() {
+		sport = input.Text()
+	}
+	if sport != "" {
+		log.Println("Test get port from config file is ok: ", sport)
+		switch strings.HasPrefix(sport, ":") {
+		case false:
+			log.Println("Need prefix ':' before number of port in the file of config")
+		case true:
+			log.Println("Test of the prefix ':' is ok")
+		default:
+			log.Println("Check prefix ':' before number of port in the file of config")
+		}
+	}
+}
+
+func TestEOF(t *testing.T) {
+	var atEOF bool
+	alarms := []byte("System")
+	_, _, err := bufio.ScanLines(alarms, atEOF)
+	if err == nil {
+		log.Printf("EOF is to string of data: %v", err)
+	}
+}
+
+func TestBeeper(t *testing.T) {
+	beeper.Melody("***---***")
+}
+
+func BenchmarkBeeper(b *testing.B) {
+	b.ReportAllocs()
 	b.ReportAllocs()
 	for i := 0; i < 10; i++ {
-		go mainbeep.MainBeep()
+		go mainBeep()
+	}
+}
+
+func BenchmarkMelody(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < 10; i++ {
+		beeper.Melody()
 	}
 }

@@ -1,4 +1,4 @@
-package mainbeep
+package beeper
 
 import (
 	"os"
