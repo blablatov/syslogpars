@@ -1,23 +1,15 @@
-# Multi-stage syslogpars build
-# Многоэтапная сборка syslogpars
+FROM golang:1.20
 
-FROM golang AS build
+RUN git clone https://github.com/blablatov/syslogpars.git
+WORKDIR syslogpars
 
-ENV location /go/src/github.com/blablatov/syslogpars
+RUN go mod download
 
-WORKDIR ${location}/syslogpars
+COPY *.go ./
+COPY *.conf ./
 
-ADD ./syslogpars.go ${location}/syslogpars
+RUN CGO_ENABLED=0 GOOS=linux go build -o /syslogpars
 
-RUN go mod init github.com/blablatov/syslogpars/syslogpars
+EXPOSE 51444/udp
 
-RUN CGO_ENABLED=0 go build -o syslogpars
-
-# Go binaries are self-contained executables. Используя директиву FROM scratch - 
-# Go образы  не должны содержать ничего, кроме одного двоичного исполняемого файла.
-
-FROM scratch
-COPY --from=build ./syslogpars ./syslogpars
-
-ENTRYPOINT ["./syslogpars"]
-EXPOSE 50051
+CMD ["/syslogpars"]
