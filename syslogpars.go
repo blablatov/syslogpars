@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/blablatov/syslogpars/beeper"
@@ -58,29 +59,20 @@ func handleConn(cn *net.UDPConn) {
 		// Data the syslog client. Syslog данные клиента.
 		fmt.Println("APC client:", addr.String(), string(cnbuf[0:dn]))
 
-		// Checks and parse EOF. Проверка и парсинг строки с EOF.
-		var atEOF bool
-		var alarm string
-		_, token, err := bufio.ScanLines(cnbuf[0:dn], atEOF)
-		if err == nil && token != nil {
-			alarm = string(token)
-		}
+		alarm := string(cnbuf[0:dn])
 
 		// If data of client contains the string with set message, calls func beep in goroutine
 		// Если данные клиента содержат строку с заданным сообщением, вызывается метод beep в goroutine
-		switch alarm {
-		case "High temperature":
+		if strings.Contains(alarm, "High temperature") {
 			go mainBeep()
-			log.Println("APC client:", addr.String(), alarm)
-		case "Maximum temperature":
+			log.Println("\n\nAPC client high temp:", addr.String(), alarm)
+		}
+		if strings.Contains(alarm, "Maximum temperature") {
 			go mainBeep()
-			log.Println("APC client:", addr.String(), alarm)
-		case "System":
-			log.Println("APC client:", addr.String(), alarm)
-		case "Configuration":
-			log.Println("APC client:", addr.String(), alarm)
-		default:
-			log.Println("APC client any:", addr.String(), alarm)
+			log.Println("\n\nAPC client max temp:", addr.String(), alarm)
+		}
+		if strings.Contains(alarm, "Configuration") {
+			log.Println("\n\nAPC client any:", addr.String(), alarm)
 		}
 
 		cn.WriteToUDP([]byte(cntime), addr)
