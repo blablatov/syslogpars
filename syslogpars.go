@@ -12,7 +12,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"syslog2mongo"
 	"time"
 
 	"github.com/blablatov/syslogpars/beeper"
