@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/blablatov/syslogpars/beeper"
+	"github.com/blablatov/syslogpars/syslog2mongo"
 )
 
 type embmongo struct {
