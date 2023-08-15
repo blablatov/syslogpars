@@ -101,7 +101,7 @@ func TestReadPort(t *testing.T) {
 	var sport string
 	sp, err := os.Open("port.conf")
 	if err != nil {
-		log.Fatalf("Error open config: %v", err)
+		log.Fatalf("Error open config port: %v", err)
 	}
 	defer sp.Close()
 	input := bufio.NewScanner(sp)
@@ -118,6 +118,22 @@ func TestReadPort(t *testing.T) {
 		default:
 			log.Println("Check prefix ':' before number of port in the file of config")
 		}
+	}
+}
+
+func TestReadDsn(t *testing.T) {
+	var dsn string
+	sm, err := os.Open("mongo.conf")
+	if err != nil {
+		log.Fatalf("Error open config mongo: %v", err)
+	}
+	defer sm.Close()
+	input := bufio.NewScanner(sm)
+	for input.Scan() {
+		dsn = input.Text()
+	}
+	if dsn != "" {
+		log.Println("Test get dsn from config file is ok: ", dsn)
 	}
 }
 
