@@ -22,4 +22,4 @@ require (
 
 replace github.com/blablatov/syslogpars/beeper => ./beeper
 
-replace syslogpars/syslog2mongo => ./syslog2mongo
+replace github.com/blablatov/syslogpars/syslog2mongo => ./syslog2mongo
